@@ -1,0 +1,56 @@
+{
+  "name": "@lxjx/auth",
+  "description": "a pure front-end small permission library",
+  "keywords": [
+    "auth",
+    "authority"
+  ],
+  "version": "2.2.1",
+  "main": "./umd/index.js",
+  "module": "./index.js",
+  "types": "./",
+  "repository": "https://github.com/Iixianjie/r2",
+  "author": {
+    "name": "lxj",
+    "email": "1073830130@qq.com"
+  },
+  "license": "MIT",
+  "files": [
+    "**"
+  ],
+  "scripts": {
+    "prebuild": "npm run test && npm run lint && rimraf ./esm ./umd",
+    "build": "npm run build:esm && npm run build:umd",
+    "postbuild": "copyfiles package.json ./esm/**/*.* -f dist && copyfiles ./umd/**/* dist",
+    "build:esm": "tsc",
+    "build:umd": "tsc -m UMD --outDir ./umd --declarationDir ./umd",
+    "dev": "parcel ./index.html",
+    "watch": "tsc -w",
+    "lint:script": "eslint ./src --ext .js,.jsx,.ts,.tsx",
+    "lint:prettier": "prettier --check ./src/**/*",
+    "lint": "npm run lint:prettier && npm run lint:script",
+    "fix": "prettier --check ./src/**/* --write && eslint ./src --ext .js,.jsx,.ts,.tsx --fix",
+    "test": "jest",
+    "ypublish": " yarn publish ./dist --access public"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.10.4",
+    "@babel/plugin-transform-runtime": "^7.10.4",
+    "@babel/preset-env": "^7.10.4",
+    "@babel/preset-react": "^7.10.4",
+    "@babel/preset-typescript": "^7.10.4",
+    "@babel/runtime": "^7.10.4",
+    "@lxjx/preset-config": "^0.1.0",
+    "@types/jest": "^26.0.4",
+    "babel-jest": "^26.1.0",
+    "copyfiles": "^2.3.0",
+    "jest": "^26.1.0",
+    "parcel-bundler": "^1.12.4",
+    "rimraf": "^3.0.2",
+    "typescript": "^3.9.6"
+  },
+  "dependencies": {
+    "@lxjx/utils": "^1.4.5",
+    "tslib": "^2.0.0"
+  }
+}

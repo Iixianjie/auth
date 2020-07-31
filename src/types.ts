@@ -1,5 +1,9 @@
 import { AnyFunction, AnyObject } from '@lxjx/utils';
 
+export type Share<D, V> = CreateAuthConfig<D, V> & {
+  listeners: Array<() => void>;
+};
+
 /** 验证失败时提供给用户的一项操作 */
 export interface Action {
   /** 操作名称 */
@@ -11,7 +15,7 @@ export interface Action {
 }
 
 /** 验证器返回的结果 */
-export interface ValidMate {
+export interface ValidMeta {
   /** 该权限名称 */
   label: string;
   /** 该权限的文字描述 */
@@ -20,9 +24,9 @@ export interface ValidMate {
   actions?: Action[];
 }
 
-/** 验证器, 一旦验证器返回了ValidMate或resolve了ValidMate则该次验证视为不通过 */
+/** 验证器, 一旦验证器返回了ValidMeta或resolve了ValidMeta则该次验证视为不通过 */
 export interface Validator<D> {
-  (deps: D, extra?: any): ValidMate | Promise<ValidMate | void> | void;
+  (deps: D, extra?: any): ValidMeta | Promise<ValidMeta | void> | void;
 }
 
 export interface Validators<D = AnyObject> {
@@ -35,32 +39,35 @@ export interface Update<D> {
 
 /** 验证结束的回调 */
 export interface Callback {
-  (pass: boolean, rejects: ValidMate[]): void;
+  (pass: boolean, rejects: ValidMeta[]): void;
 }
 
+export type Subscribe = (listener: () => void) => () => void;
+
 /** 验证结束的Promise */
-export type PromiseBack = { pass: boolean, rejects: ValidMate[] };
+export type PromiseBack = { pass: boolean; rejects: ValidMeta[] };
 
 /** 用于验证的auth keys */
 export type AuthKeys<V> = Array<keyof V | Array<keyof V>>;
 
-
 export interface Auth<D, V> {
   /** 更新dependency */
-  update: Update<D>;
+  update: Update<D & { [key: string]: any }>;
   /** 订阅dependency变更, 返回函数用于取消改订阅 */
-  subscribe: () => () => void;
+  subscribe: Subscribe;
+  /** 获取当前的dependency */
+  getDeps(): D;
   /**
-   * @param auth - 所属权限, 如果数组项为数组则表示逻辑`or`
+   * @param authKeys - 所属权限, 如果数组项为数组则表示逻辑`or`
    * @param callback - 验证结束的回调
    *    回调接收:
    *      * pass 是否通过了所有指定的验证
    *      * rejects 未通过的验证器返回的元数据列表
    * @return - resolve callback同样参数对象的Promise，和callback二选一
    * */
-  getAuth(auth: AuthKeys<V>, callback?: Callback): Promise<PromiseBack>;
+  auth(authKeys: AuthKeys<V>, callback?: Callback): Promise<PromiseBack>;
   /**
-   * @param auth - 所属权限, 如果数组项为数组则表示逻辑`or`
+   * @param authKeys - 所属权限, 如果数组项为数组则表示逻辑`or`
    * @param extra - 传递给验证器的额外参数
    * @param callback - 验证结束的回调
    *    回调接收:
@@ -68,12 +75,18 @@ export interface Auth<D, V> {
    *      * rejects 未通过的验证器返回的元数据列表
    * @return - resolve callback同样参数对象的Promise，和callback二选一
    * */
-  getAuth(auth: AuthKeys<V>, extra: any, callback?: Callback): Promise<PromiseBack>;
+  auth(authKeys: AuthKeys<V>, extra: any, callback?: Callback): Promise<PromiseBack>;
 }
 
 export interface CreateAuthConfig<D, V> {
+  /** 被所有验证器依赖的值组成的对象 */
   dependency?: D;
+  /** 待注册的验证器 */
   validators: V;
-  // 如果一个验证未通过，则阻止后续验证, 开启后,在执行auth()时将优先级更高的权限key放到前面有助于提高验证反馈的精度, 如 login > vip, 因为vip状态永远都是在登录后进行验证的
+  /**
+   * 如果一个验证未通过，则阻止后续验证开启后
+   * * 对于or中的子权限，即使开启了validFirst，依然会对每一项进行验证，但是只会返回第一个
+   * * 在执行auth()时将优先级更高的权限key放到前面有助于提高验证反馈的精度, 如 login > vip, 因为vip状态是以登录状态为基础的
+   *  */
   validFirst?: boolean;
 }

@@ -5,7 +5,7 @@
     "auth",
     "authority"
   ],
-  "version": "2.2.1",
+  "version": "0.9.0",
   "main": "./umd/index.js",
   "module": "./index.js",
   "types": "./",
@@ -19,7 +19,7 @@
     "**"
   ],
   "scripts": {
-    "prebuild": "npm run test && npm run lint && rimraf ./esm ./umd",
+    "prebuild": "rimraf ./esm ./umd ./dist && npm run test && npm run lint",
     "build": "npm run build:esm && npm run build:umd",
     "postbuild": "copyfiles package.json ./esm/**/*.* -f dist && copyfiles ./umd/**/* dist",
     "build:esm": "tsc",

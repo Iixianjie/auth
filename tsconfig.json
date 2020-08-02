@@ -9,7 +9,7 @@
   "include": [
     ".eslintrc.js",
 //    "./demo",
-    "./test",
+//    "./test",
     "./src"
   ],
   "compilerOptions": {

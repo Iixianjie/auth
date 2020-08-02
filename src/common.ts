@@ -1,5 +1,14 @@
 import { isArray, isFunction } from '@lxjx/utils';
-import { Auth, AuthKeys, Callback, Share, Subscribe, Validators, ValidMeta } from './types';
+import {
+  Auth,
+  AuthConfig,
+  AuthKeys,
+  Callback,
+  Share,
+  Subscribe,
+  Validators,
+  ValidMeta,
+} from './types';
 
 /**
  * 传入验证key、所有验证器、依赖数据、额外数据。对该key进行验证后返回验证Promise形式的结果(void 或 ValidMeta)
@@ -29,15 +38,12 @@ export const validItem = async (
 /**
  * 实现auth() api
  * */
-export function authImpl<D, V extends Validators<D>>({
-  validators,
-  dependency: deps,
-  validFirst,
-}: Share<D, V>): Auth<D, V>['auth'] {
-  return async (authKeys: AuthKeys<V>, extraOrCb: any, cb?: Callback) => {
-    const extraIsFn = isFunction(extraOrCb);
-    const extra = extraIsFn ? undefined : extraOrCb;
-    const callback: Callback = extraIsFn ? extraOrCb : cb;
+export function authImpl<D, V extends Validators<D>>(share: Share<D, V>): Auth<D, V>['auth'] {
+  return async (authKeys: AuthKeys<V>, configOrCb: any, cb?: Callback) => {
+    const { validators, dependency: deps, validFirst } = share;
+    const confIsFn = isFunction(configOrCb);
+    const { extra, validators: localValidators }: AuthConfig<D> = confIsFn ? {} : configOrCb || {};
+    const callback: Callback = confIsFn ? configOrCb : cb;
 
     /** 所有验证失败结果 */
     const rejects: ValidMeta[] = [];
@@ -71,7 +77,7 @@ export function authImpl<D, V extends Validators<D>>({
           validFirst ? rejects.push(tempRejects[0]) : rejects.push(...tempRejects);
         }
       } else {
-        const meta = await validItem(key, validators, deps, extra);
+        const meta = await validItem(key, { ...localValidators, ...validators }, deps, extra);
 
         if (!meta) return;
 
@@ -94,26 +100,25 @@ export function authImpl<D, V extends Validators<D>>({
       await Promise.all(authKeys.map(ak => test(ak)));
     }
 
-    callback?.(pass, rejects);
+    const rjs = rejects.length ? rejects : null;
 
-    return {
-      pass,
-      rejects,
-    };
+    callback?.(rjs);
+
+    return rjs;
   };
 }
 
 /**
  * 生成和实现subscribe() api
  * */
-export function subscribeImpl({ listeners }: Share<any, any>): Subscribe {
+export function subscribeImpl(share: Share<any, any>): Subscribe {
   return (subscribe: () => void) => {
-    listeners.push(subscribe);
+    share.listeners.push(subscribe);
 
     return () => {
-      const ind = listeners.indexOf(subscribe);
+      const ind = share.listeners.indexOf(subscribe);
       if (ind === -1) return;
-      listeners.splice(ind, 1);
+      share.listeners.splice(ind, 1);
     };
   };
 }

@@ -10,7 +10,7 @@ test('create', () => {
   });
 
   expect(auth).toMatchObject({
-    update: expect.any(Function),
+    setDeps: expect.any(Function),
     subscribe: expect.any(Function),
     getDeps: expect.any(Function),
     auth: expect.any(Function),
@@ -31,7 +31,7 @@ test('update & getDeps', () => {
     age: 18,
   });
 
-  auth.update({
+  auth.setDeps({
     user: 'jxl',
   });
 
@@ -55,7 +55,7 @@ test('subscribe & unSubscribe', () => {
 
   const usLs1 = auth.subscribe(ls1);
 
-  auth.update({
+  auth.setDeps({
     age: 19,
   });
 
@@ -63,7 +63,7 @@ test('subscribe & unSubscribe', () => {
 
   auth.subscribe(ls2);
 
-  auth.update({
+  auth.setDeps({
     age: 18,
   });
 
@@ -141,8 +141,7 @@ describe('auth & validators', () => {
   test('base', done => {
     const auth = getAuth();
 
-    auth.auth(['login', 'vip', 'audit'], (pass, rejects) => {
-      expect(pass).toBe(false);
+    auth.auth(['login', 'vip', 'audit'], rejects => {
       expect(rejects).toEqual([
         {
           label: 'not vip',
@@ -157,9 +156,8 @@ describe('auth & validators', () => {
   test('or', done => {
     const auth = getAuth();
 
-    auth.auth(['login', ['vip', 'audit']], (pass, rejects) => {
-      expect(pass).toBe(true);
-      expect(rejects).toEqual([]);
+    auth.auth(['login', ['vip', 'audit']], rejects => {
+      expect(rejects).toEqual(null);
 
       done();
     });
@@ -168,12 +166,36 @@ describe('auth & validators', () => {
   test('extra', done => {
     const auth = getAuth();
 
-    auth.auth(['self'], 'lxj', (pass, rejects) => {
-      expect(pass).toBe(true);
-      expect(rejects).toEqual([]);
+    auth.auth(['self'], { extra: 'lxj' }, rejects => {
+      expect(rejects).toEqual(null);
 
       done();
     });
+  });
+
+  test('local validators', done => {
+    const auth = getAuth();
+
+    auth.auth(
+      ['isJxl', 'self'],
+      {
+        extra: 1,
+        validators: {
+          isJxl(deps, extra) {
+            if (deps.usr.name !== 'jxl') {
+              return {
+                label: `Must be jxl${extra}`,
+              };
+            }
+          },
+        },
+      },
+      rejects => {
+        expect(rejects).toEqual([{ label: 'Must be jxl1' }]);
+
+        done();
+      },
+    );
   });
 
   test('async & promise', () => {
@@ -181,8 +203,7 @@ describe('auth & validators', () => {
 
     const now = Date.now();
 
-    return auth.auth(['login', 'asyncValid']).then(({ pass, rejects }) => {
-      expect(pass).toBe(false);
+    return auth.auth(['login', 'asyncValid']).then(rejects => {
       expect(rejects).toEqual([
         {
           label: 'async valid',

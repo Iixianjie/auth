@@ -6,8 +6,8 @@ export declare const validItem: (key: string, validators: Validators<any>, deps:
 /**
  * 实现auth() api
  * */
-export declare function authImpl<D, V extends Validators<D>>({ validators, dependency: deps, validFirst, }: Share<D, V>): Auth<D, V>['auth'];
+export declare function authImpl<D, V extends Validators<D>>(share: Share<D, V>): Auth<D, V>['auth'];
 /**
  * 生成和实现subscribe() api
  * */
-export declare function subscribeImpl({ listeners }: Share<any, any>): Subscribe;
+export declare function subscribeImpl(share: Share<any, any>): Subscribe;

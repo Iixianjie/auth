@@ -1,22 +1,20 @@
 import { AnyObject } from '@lxjx/utils';
-import { Auth, CreateAuthConfig, Update, Validators, Share } from './types';
+import { Auth, CreateAuthConfig, SetDeps, Validators, Share } from './types';
 import { authImpl, subscribeImpl } from './common';
 
 export default function create<
   D extends AnyObject = AnyObject,
   V extends Validators<D> = Validators<D>
->({ dependency, validators, validFirst = false }: CreateAuthConfig<D, V>): Auth<D, V> {
-  let deps = { ...dependency } as D;
-
+>({ dependency, validators, validFirst = true }: CreateAuthConfig<D, V>): Auth<D, V> {
   const share: Share<D, V> = {
-    dependency: deps,
+    dependency: { ...dependency! },
     validators,
     validFirst,
     listeners: [],
   };
 
-  const update: Update<D> = patch => {
-    deps = { ...deps, ...patch };
+  const setDeps: SetDeps<D> = patch => {
+    share.dependency = { ...share.dependency!, ...patch };
     /** 触发listener */
     share.listeners.forEach(listener => {
       listener();
@@ -28,9 +26,9 @@ export default function create<
   const subscribe = subscribeImpl(share);
 
   return {
-    update,
+    setDeps,
     subscribe,
     auth,
-    getDeps: () => deps,
+    getDeps: () => share.dependency!,
   };
 }

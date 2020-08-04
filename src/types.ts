@@ -11,7 +11,7 @@ export interface Action {
   /** 要执行的操作 */
   handler?: AnyFunction;
   /** 如果传入，则渲染a链接 */
-  link?: string;
+  href?: string;
   /** 可以在这里传递，事件类型(onClick)，渲染类型(link)等，帮助控制具体的显示 */
   [key: string]: any;
 }
@@ -95,7 +95,7 @@ export interface CreateAuthConfig<D, V> {
   /** 待注册的验证器 */
   validators: V;
   /**
-   * 如果一个验证未通过，则阻止后续验证开启后
+   * 如果一个验证未通过，则阻止后续验证
    * * 对于or中的子权限，即使开启了validFirst，依然会对每一项进行验证，但是只会返回第一个
    * * 在执行auth()时将优先级更高的权限key放到前面有助于提高验证反馈的精度, 如 login > vip, 因为vip状态是以登录状态为基础的
    *  */

@@ -21,7 +21,7 @@
 
 
 
-a implementation of the underlying react permissions through this library:  [**fr/auth**](<https://iixianjie.github.io/fr/docs/utils/auth>)
+a implementation of the underlying react permissions through this library:  [**M78/auth**](<https://iixianjie.github.io/M78/docs/utils/auth>)
 
 
 

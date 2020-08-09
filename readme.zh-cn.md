@@ -17,7 +17,7 @@
 
 
 
-一个通过本库作为底层的react权限实现:  [**fr/auth**](<https://iixianjie.github.io/fr/docs/utils/auth>)
+一个通过本库作为底层的react权限实现:  [**M78/auth**](<https://iixianjie.github.io/M78/docs/utils/auth>)
 
 
 

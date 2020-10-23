@@ -104,7 +104,7 @@ auth.auth(['login', 'vip'], rejects => {
 
 
 
-## 完整API
+## API
 
 ```ts
 /* create() */

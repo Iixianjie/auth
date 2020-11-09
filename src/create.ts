@@ -16,9 +16,7 @@ export default function create<
   const setDeps: SetDeps<D> = patch => {
     share.dependency = { ...share.dependency!, ...patch };
     /** 触发listener */
-    share.listeners.forEach(listener => {
-      listener();
-    });
+    share.listeners.forEach(listener => listener());
   };
 
   const auth = authImpl(share);

@@ -8,8 +8,8 @@
   ],
   "include": [
     ".eslintrc.js",
-//    "./demo",
-//    "./test",
+    "./demo",
+    "./test",
     "./src"
   ],
   "compilerOptions": {

@@ -1,11 +1,15 @@
 import { AnyObject } from '@lxjx/utils';
 import { Auth, CreateAuthConfig, SetDeps, Validators, Share } from './types';
-import { authImpl, subscribeImpl } from './common';
+import { authImpl, middlewareImpl, subscribeImpl } from './common';
 
 export default function create<
   D extends AnyObject = AnyObject,
   V extends Validators<D> = Validators<D>
->({ dependency, validators, validFirst = true }: CreateAuthConfig<D, V>): Auth<D, V> {
+>(conf: CreateAuthConfig<D, V>): Auth<D, V> {
+  const [config, patchHandle] = middlewareImpl(conf);
+
+  const { dependency, validators, validFirst = true } = config;
+
   const share: Share<D, V> = {
     dependency: { ...dependency! },
     validators,
@@ -23,10 +27,14 @@ export default function create<
 
   const subscribe = subscribeImpl(share);
 
-  return {
-    setDeps,
+  const apis = {
     subscribe,
     auth,
+    setDeps,
     getDeps: () => share.dependency!,
   };
+
+  patchHandle && patchHandle(apis);
+
+  return apis;
 }

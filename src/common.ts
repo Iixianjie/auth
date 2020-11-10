@@ -1,9 +1,12 @@
-import { isArray, isFunction } from '@lxjx/utils';
+import { AnyObject, isArray, isFunction } from '@lxjx/utils';
 import {
   Auth,
   AuthConfig,
   AuthKeys,
   Callback,
+  CreateAuthConfig,
+  MiddlewareBonusInit,
+  MiddlewareBonusPatch,
   Share,
   Subscribe,
   Validators,
@@ -11,7 +14,7 @@ import {
 } from './types';
 
 /**
- * 传入验证key、所有验证器、依赖数据、额外数据。对该key进行验证后返回验证Promise形式的结果(void 或 ValidMeta)
+ * 传入验证key、验证器列表、依赖数据、额外数据。对该key进行验证后返回验证Promise形式的结果(void 或 ValidMeta)
  * */
 export const validItem = async (
   key: string,
@@ -27,6 +30,7 @@ export const validItem = async (
 
   if (!result) return;
 
+  // 支持任何promise like
   if ('then' in result && 'catch' in result) {
     // eslint-disable-next-line no-return-await
     return await result;
@@ -53,7 +57,7 @@ export function authImpl<D, V extends Validators<D>>(share: Share<D, V>): Auth<D
     /**
      * 传入单个权限key或key数组进行验证, 并将验证结果写入pass和rejects
      * 单个验证时: 验证该项并返回验证meta信息，验证正确时无返回
-     * key数组时: 作为调节`or`进行验证，只要其中任意一项通过了验证则通过验证
+     * key数组时: 作为条件`or`进行验证，只要其中任意一项通过了验证则通过验证
      * */
     const test = async (key: any, isOr?: boolean) => {
       if (isArray(key)) {
@@ -66,6 +70,7 @@ export function authImpl<D, V extends Validators<D>>(share: Share<D, V>): Auth<D
           if (meta) {
             tempRejects.push(meta);
           }
+          // 成功任意一项即视为成功
           if (!meta) {
             flag = true;
             break;
@@ -110,6 +115,7 @@ export function authImpl<D, V extends Validators<D>>(share: Share<D, V>): Auth<D
 
 /**
  * 生成和实现subscribe() api
+ * - 通知功能在setDeps内部
  * */
 export function subscribeImpl(share: Share<any, any>): Subscribe {
   return (subscribe: () => void) => {
@@ -121,4 +127,51 @@ export function subscribeImpl(share: Share<any, any>): Subscribe {
       share.listeners.splice(ind, 1);
     };
   };
+}
+
+/**
+ * 实现中间件功能
+ * */
+export function middlewareImpl(conf: CreateAuthConfig<any, any>) {
+  const { middleware } = conf;
+
+  if (!middleware?.length) return [conf] as const;
+
+  const allMid = [...middleware];
+
+  const ctx: AnyObject = {};
+
+  const initBonus: MiddlewareBonusInit = {
+    ctx,
+    config: conf,
+    init: true,
+  };
+
+  allMid.forEach(mid => {
+    const nextConf = mid(initBonus);
+    if (nextConf === undefined)
+      throw Error(
+        'auth: do you forget to return to the config during the middleware initialization phase?',
+      );
+    initBonus.config = nextConf;
+  });
+
+  const patchHandler = (apis: Auth<any, any>) => {
+    const patchBonus: MiddlewareBonusPatch = {
+      init: false,
+      apis,
+      ctx,
+      monkey: (name, cb) => {
+        const next = apis[name];
+        if (!next) return;
+        apis[name] = cb(next);
+      },
+    };
+
+    allMid.reverse(); /* patch函数是由内到外执行的，需要反转顺序 */
+
+    allMid.forEach(mid => mid(patchBonus));
+  };
+
+  return [initBonus.config, patchHandler] as const;
 }

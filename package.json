@@ -1,12 +1,12 @@
 {
   "name": "@lxjx/auth",
-  "description": "a pure front-end small permission library",
+  "description": "small and simple javaScript permission library",
   "keywords": [
     "auth",
     "authority"
   ],
   "version": "0.10.1",
-  "main": "./umd/index.js",
+  "main": "index.js",
   "module": "./index.js",
   "types": "./",
   "repository": "https://github.com/Iixianjie/r2",

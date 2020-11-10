@@ -4,7 +4,7 @@
 <br>
 
 
-<p align="center">a pure front-end small permission library</p>
+<p align="center">small and simple javaScript permission library</p>
 
 <br>
 
@@ -17,7 +17,7 @@
 
 
 
-一个通过本库作为底层的react权限实现:  [**M78/auth**](<https://iixianjie.github.io/M78/docs/utils/auth>)
+一个通过本库作为底层的react权限实现:  [**M78/auth**](<http://llixianjie.gitee.io/m78/docs/utils/auth>)
 
 
 
@@ -37,6 +37,7 @@ yarn add @lxjx/auth
 
 ```ts
 import create from '@lxjx/auth';
+import cache from '@lxjx/auth/cacheMiddleware';
 
 // 1. 通过create创建权限api并使用
 
@@ -46,6 +47,8 @@ const {
     subscribe, // 订阅dependency变更
     auth, // 验证权限
 } = create({
+    /* 可选行为，将dependency持久化到本地(仅限浏览器) */
+    middleware: [cache('my_auth_deps', 86400000/* ms */)],
     /* 被所有验证器依赖数据 */
     dependency: {
         verify: false,
@@ -100,12 +103,14 @@ auth.auth(['login', 'vip'], rejects => {
 
 
 
-## 完整API
+## 用法速览
 
 ```ts
 /* create() */
 
 const auth = create({
+    /** 中间件 */
+    middleware?: Middleware[];
     /** 被所有验证器依赖的值组成的对象 */
     dependency?: object,
     /** 待注册的验证器 */
@@ -140,7 +145,7 @@ unsub();
 auth(['key1, key2', ['orKey1', 'orKey2']], reject => {
     // rejects不为null时，说明权限验证未通过
     // 存在值时，rejects为validator返回结果组成的数组
-})；
+});
 
 // 通过promise使用
 auth.auth(['login', 'vip'])
@@ -149,14 +154,86 @@ auth.auth(['login', 'vip'])
 // 向validator传递额外参数或局部验证器(局部验证器注册后依然需要声明key才会生效)
 auth(
     ['key1, key2', ['orKey1', 'orKey2']], 
-    { extra: 'someData', validators }, 
+    { extra: 'someData', validators },
     reject => {}
-)；
+);
 ```
 
+<br/>
+
+<br/>
+
+
+## 中间件
+
+中间件用于为原有api添加各种补丁功能，也可用于在配置实际生效前对其进行修改。
+
+中间件有两个执行周期
+
+- 初始化阶段，用于修改传入的默认配置
+- 补丁阶段，用于为内置api添加各种增强性补丁
 
 
 
+签名：
+
+```ts
+interface Middleware {
+  (bonus: MiddlewareBonusPatch | MiddlewareBonusInit): CreateAuthConfig<any, any> | void;
+}
+
+// 初始化阶段参数
+export interface MiddlewareBonusInit {
+  /** 是否为初始化阶段 */
+  init: true;
+  /** 当前创建配置(可能已被其他中间件修改过) */
+  config: CreateAuthConfig<any, any>;
+  /** 在不同中间件中共享的对象 */
+  ctx: AnyObject;
+}
+
+// 补丁阶段参数
+export interface MiddlewareBonusPatch {
+  init: false;
+  /** 当前的auth api */
+  apis: Auth<any, any>;
+  /** 为api添加增强补丁 */
+  monkey: MonkeyHelper;
+  /** 在不同中间件中共享的对象 */
+  ctx: AnyObject;
+}
+```
+
+<br/>
+
+以编写一个log中间件为例
+```ts
+import { Middleware } from '@lxjx/auth';
+
+const cacheMiddleware: Middleware = bonus => {
+  if (bonus.init) {
+    const conf = bonus.config;
+    console.log('init');
+      
+    // 初始化时必须返回配置，即使没有对其进行修改
+    return { ...conf, dependency: { ...conf.dependency, additionalDep: 'hello😄'  } }; 
+  }
+  
+  console.log('api created');
+
+  // 增强内部方法
+  bonus.monkey('setDeps', next => patch => {
+    console.log('setDeps', patch);
+    next(patch);
+  });
+
+  bonus.monkey('getDeps', next => () => {
+    console.log('getDeps');
+    return next();
+  });
+
+}
+```
 
 
 

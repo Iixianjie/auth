@@ -1,4 +1,4 @@
-import create from '../src';
+import create, { Middleware } from '../src';
 
 test('create', () => {
   const auth = create({
@@ -212,4 +212,58 @@ describe('auth & validators', () => {
       expect(Date.now() - now >= 2000).toBe(true);
     });
   });
+});
+
+test('middleware', () => {
+  expect.assertions(3); // 两次patch是否执行、1次初始配置更改是否成功
+
+  const mid1: Middleware = bonus => {
+    if (bonus.init) {
+      const conf = bonus.config;
+      const deps = conf.dependency;
+
+      return { ...conf, dependency: { ...deps, field3: 'hello' } };
+    }
+
+    bonus.monkey('setDeps', next => patch => {
+      expect(true).toBe(true);
+      next(patch);
+    });
+  };
+
+  const mid2: Middleware = bonus => {
+    if (bonus.init) {
+      const conf = bonus.config;
+      const deps = conf.dependency;
+
+      return { ...conf, dependency: { ...deps, field4: 'world' } };
+    }
+
+    bonus.monkey('subscribe', next => listener => {
+      expect(true).toBe(true);
+      return next(listener);
+    });
+  };
+
+  const auth = create({
+    middleware: [mid1, mid2],
+    dependency: {
+      user: 'lxj',
+      age: 18,
+    },
+    validators: {},
+  });
+
+  expect(auth.getDeps()).toEqual({
+    user: 'lxj',
+    age: 18,
+    field3: 'hello',
+    field4: 'world',
+  });
+
+  auth.setDeps({
+    user: 'jxl',
+  });
+
+  auth.subscribe(() => {});
 });

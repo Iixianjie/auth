@@ -1,7 +1,7 @@
-import { __assign, __awaiter, __generator } from "tslib";
+import { __assign, __awaiter, __generator, __spreadArrays } from "tslib";
 import { isArray, isFunction } from '@lxjx/utils';
 /**
- * 传入验证key、所有验证器、依赖数据、额外数据。对该key进行验证后返回验证Promise形式的结果(void 或 ValidMeta)
+ * 传入验证key、验证器列表、依赖数据、额外数据。对该key进行验证后返回验证Promise形式的结果(void 或 ValidMeta)
  * */
 export var validItem = function (key, validators, deps, extra) { return __awaiter(void 0, void 0, void 0, function () {
     var validator, result;
@@ -60,6 +60,7 @@ export function authImpl(share) {
                                     if (meta) {
                                         tempRejects.push(meta);
                                     }
+                                    // 成功任意一项即视为成功
                                     if (!meta) {
                                         flag = true;
                                         return [3 /*break*/, 4];
@@ -117,6 +118,7 @@ export function authImpl(share) {
 }
 /**
  * 生成和实现subscribe() api
+ * - 通知功能在setDeps内部
  * */
 export function subscribeImpl(share) {
     return function (subscribe) {
@@ -128,4 +130,41 @@ export function subscribeImpl(share) {
             share.listeners.splice(ind, 1);
         };
     };
+}
+/**
+ * 实现中间件功能
+ * */
+export function middlewareImpl(conf) {
+    var middleware = conf.middleware;
+    if (!(middleware === null || middleware === void 0 ? void 0 : middleware.length))
+        return [conf];
+    var allMid = __spreadArrays(middleware);
+    var ctx = {};
+    var initBonus = {
+        ctx: ctx,
+        config: conf,
+        init: true,
+    };
+    allMid.forEach(function (mid) {
+        var nextConf = mid(initBonus);
+        if (nextConf === undefined)
+            throw Error('auth: do you forget to return to the config during the middleware initialization phase?');
+        initBonus.config = nextConf;
+    });
+    var patchHandler = function (apis) {
+        var patchBonus = {
+            init: false,
+            apis: apis,
+            ctx: ctx,
+            monkey: function (name, cb) {
+                var next = apis[name];
+                if (!next)
+                    return;
+                apis[name] = cb(next);
+            },
+        };
+        allMid.reverse(); /* patch函数是由内到外执行的，需要反转顺序 */
+        allMid.forEach(function (mid) { return mid(patchBonus); });
+    };
+    return [initBonus.config, patchHandler];
 }

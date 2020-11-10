@@ -1,6 +1,9 @@
-import create from '../src';
+import { createRandString } from '@lxjx/utils';
+import create, { Middleware } from '../src';
+import cache from '../src/cacheMiddleware';
 
 const auth = create({
+  middleware: [cache('test_cache', 5000)],
   dependency: {
     name: 'lxj1',
     age: 17,
@@ -10,7 +13,7 @@ const auth = create({
       console.log(deps.name, extr);
       if (deps.name !== 'lxj') {
         return {
-          label: '你不是李显杰',
+          label: '你不是lxj',
         };
       }
     },
@@ -24,30 +27,42 @@ const auth = create({
   },
 });
 
-auth.auth(
-  ['isLxj', 'isLxj2', 'is18p'],
-  {
-    extra: 'heh',
-    validators: {
-      isLxj2(deps, extr) {
-        console.log(222, deps.name, extr);
-        if (deps.name !== 'lxj') {
-          return {
-            label: '你不是李显杰222',
-          };
-        }
-      },
-    },
-  },
-  rejects => {
-    console.log(rejects);
+// console.log(auth.getDeps());
 
-    auth.setDeps({
-      name: 'lxj',
-    });
+// auth.setDeps({
+//   name: createRandString(),
+// });
 
-    auth.auth(['isLxj', 'is18p'], rejects2 => {
-      console.log(rejects2);
-    });
-  },
-);
+// setInterval(() => {
+
+//
+//   console.log(auth.getDeps());
+// }, 2000);
+
+// auth.auth(
+//   ['isLxj', 'isLxj2', 'is18p'],
+//   {
+//     extra: 'heh',
+//     validators: {
+//       isLxj2(deps, extr) {
+//         console.log(222, deps.name, extr);
+//         if (deps.name !== 'lxj') {
+//           return {
+//             label: '你不是lxj222',
+//           };
+//         }
+//       },
+//     },
+//   },
+//   rejects => {
+//     console.log(rejects);
+//
+//     auth.setDeps({
+//       name: 'lxj',
+//     });
+//
+//     auth.auth(['isLxj', 'is18p'], rejects2 => {
+//       console.log(rejects2);
+//     });
+//   },
+// );

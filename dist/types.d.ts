@@ -1,15 +1,14 @@
-import { AnyFunction, AnyObject } from '@lxjx/utils';
+import { AnyObject } from '@lxjx/utils';
 export declare type Share<D, V> = CreateAuthConfig<D, V> & {
     listeners: Array<() => void>;
 };
-/** 验证失败时提供给用户的一项操作(仅作为约定，可以执行根据需要调整) */
+/**
+ * 验证失败时提供给用户的一项操作(仅作为约定，可以执行根据需要调整)
+ * 可以在这里传递，事件类型(onClick)，渲染类型(link)等，帮助控制具体的显示
+ * */
 export interface Action {
     /** 操作名称 */
     label: string;
-    /** 要执行的操作 */
-    handler?: AnyFunction;
-    /** 如果传入，则渲染a链接 */
-    href?: string;
     /** 可以在这里传递，事件类型(onClick)，渲染类型(link)等，帮助控制具体的显示 */
     [key: string]: any;
 }
@@ -79,14 +78,46 @@ export interface Auth<D, V> {
     auth(authKeys: AuthKeys<V>, config: AuthConfig<D>, callback?: Callback): Promise<PromiseBack>;
 }
 export interface CreateAuthConfig<D, V> {
+    /** 中间件 */
+    middleware?: Middleware[];
     /** 被所有验证器依赖的值组成的对象 */
     dependency?: D;
     /** 待注册的验证器 */
-    validators: V;
+    validators?: V;
     /**
      * 如果一个验证未通过，则阻止后续验证
      * * 对于or中的子权限，即使开启了validFirst，依然会对每一项进行验证，但是只会返回第一个
      * * 在执行auth()时将优先级更高的权限key放到前面有助于提高验证反馈的精度, 如 login > vip, 因为vip状态是以登录状态为基础的
      *  */
     validFirst?: boolean;
+}
+export interface MiddlewareBonusInit {
+    /** 是否为初始化阶段 */
+    init: true;
+    /** 当前创建配置(可能已被其他中间件修改过) */
+    config: CreateAuthConfig<any, any>;
+    /** 在不同中间件中共享的对象，可以通过中间件特有的命名空间在其中存储数据 */
+    ctx: AnyObject;
+}
+export interface MiddlewareBonusPatch {
+    init: false;
+    /** 当前的auth api(可能已被其他中间件修改过) */
+    apis: Auth<any, any>;
+    /** 为api添加增强补丁 */
+    monkey: MonkeyHelper;
+    /** 在不同中间件中共享的对象，可以通过中间件特有的命名空间在其中存储数据 */
+    ctx: AnyObject;
+}
+export interface MonkeyHelper {
+    <Name extends keyof Auth<any, any>>(name: Name, cb: (next: Auth<any, any>[Name]) => Auth<any, any>[Name]): void;
+}
+/**
+ * 中间件函数。用于增强api、修改初始化配置
+ * <D> - dependency
+ * <V> - validators
+ * @param bonus - 为中间件提供的各种用于增强api的参数
+ * @return 当处于初始化阶段时，返回值会作为新的config传递给下一个api, 非初始化阶段无返回值
+ * */
+export interface Middleware {
+    (bonus: MiddlewareBonusPatch | MiddlewareBonusInit): CreateAuthConfig<any, any> | void;
 }

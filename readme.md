@@ -4,7 +4,7 @@
 <br>
 
 
-<p align="center">a pure front-end small permission library</p>
+<p align="center">small and simple javaScript permission library</p>
 
 <br>
 
@@ -21,7 +21,7 @@
 
 
 
-a implementation of the underlying react permissions through this library:  [**M78/auth**](<https://iixianjie.github.io/M78/docs/utils/auth>)
+a implementation of the underlying react permissions through this library:  [**M78/auth**](<http://llixianjie.gitee.io/m78/docs/utils/auth>)
 
 
 
@@ -41,6 +41,7 @@ yarn add @lxjx/auth
 
 ```ts
 import create from '@lxjx/auth';
+import cache from '@lxjx/auth/cacheMiddleware';
 
 // 1. create a permission api through create and use the
 
@@ -50,6 +51,8 @@ const {
     subscribe, // subscribe to dependency changes
     auth, // verify permissions
 } = create({
+    /* optional behavior, persist the dependency locally (browser only)*/
+    middleware: [cache('my_auth_deps', 86400000/* ms */)],
     /* data relied on by all validators */
     dependency: {
         verify: false,
@@ -104,12 +107,14 @@ auth.auth(['login', 'vip'], rejects => {
 
 
 
-## API
+## Overview
 
 ```ts
 /* create() */
 
 const auth = create({
+    /** middlewares */
+    middleware?: Middleware[];
     /** an object made up of values that all validators depend on*/
     dependency?: object,
     /** validators to be registered */
@@ -144,7 +149,7 @@ unsub();
 auth(['key1, key2', ['orKey1', 'orKey2']], reject => {
     // if rejects is not null, the permission verification failed
     // when there is a value, rejects is an array of results returned by validator
-})；
+});
 
 // use through promise
 auth.auth(['login', 'vip'])
@@ -155,10 +160,84 @@ auth(
     ['key1, key2', ['orKey1', 'orKey2']], 
     { extra: 'someData', validators }, 
     reject => {}
-)；
+);
 ```
 
+<br/>
 
+<br/>
+
+## Middleware
+
+Middleware is used to add various patches to the original api, and it can also be used to modify the configuration before it actually takes effect.
+
+Middleware has two execution cycles:
+
+- Initialization phase, which is used to modify the default configuration passed in
+- Patch phase, which is used to add various enhanced patches to the built-in api
+
+
+
+signature：
+
+```ts
+interface Middleware {
+  (bonus: MiddlewareBonusPatch | MiddlewareBonusInit): CreateAuthConfig<any, any> | void;
+}
+
+// Initialization phase parameters
+export interface MiddlewareBonusInit {
+  /** Whether it is the initialization phase */
+  init: true;
+  /** Currently create configuration (may have been modified by other middleware) */
+  config: CreateAuthConfig<any, any>;
+  /** Objects shared in different middleware */
+  ctx: AnyObject;
+}
+
+// Patch phase parameters
+export interface MiddlewareBonusPatch {
+  init: false;
+  /** The current auth api */
+  apis: Auth<any, any>;
+  /** Add enhanced patches for api */
+  monkey: MonkeyHelper;
+  /** Objects shared in different middleware */
+  ctx: AnyObject;
+}
+```
+
+<br/>
+
+a log middleware example
+
+```ts
+import { Middleware } from '@lxjx/auth';
+
+const cacheMiddleware: Middleware = bonus => {
+  if (bonus.init) {
+    const conf = bonus.config;
+    console.log('init');
+      
+    // The configuration must be returned during initialization, even if it has not been modified
+    return { ...conf, dependency: { ...conf.dependency, additionalDep: 'hello😄'  } }; 
+  }
+  
+  console.log('api created');
+
+  // Enhanced internal method
+  bonus.monkey('setDeps', next => patch => {
+    console.log('setDeps', patch);
+    next(patch);
+  });
+
+  bonus.monkey('getDeps', next => () => {
+    console.log('getDeps');
+    return next();
+  });
+
+}
+```
 
 
 

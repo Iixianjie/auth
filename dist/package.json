@@ -5,7 +5,7 @@
     "auth",
     "authority"
   ],
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "./umd/index.js",
   "module": "./index.js",
   "types": "./",
@@ -31,7 +31,8 @@
     "lint": "npm run lint:prettier && npm run lint:script",
     "fix": "prettier --check ./src/**/* --write && eslint ./src --ext .js,.jsx,.ts,.tsx --fix",
     "test": "jest",
-    "ypublish": "yarn publish ./dist --access public"
+    "ypublish": "yarn publish ./dist --access public",
+    "postypublish": "node script/syncPkg"
   },
   "devDependencies": {
     "@babel/core": "^7.10.4",

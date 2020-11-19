@@ -5,7 +5,7 @@
     "auth",
     "authority"
   ],
-  "version": "1.11.5",
+  "version": "1.11.6",
   "main": "index.js",
   "module": "index.js",
   "types": "./",

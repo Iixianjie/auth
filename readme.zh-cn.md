@@ -12,20 +12,54 @@
     <a href="./readme.md">en</a> | 
     <span>中文</span>
 </p>
+<br>
+
+😘 一个通过本库作为底层的react权限实现:  [**M78/auth**](<http://llixianjie.gitee.io/m78/docs/utils/auth>)
 
 <br>
 
+<!-- TOC -->
 
+- [安装](#安装)
+- [介绍](#介绍)
+- [使用](#使用)
+- [API速览](#api速览)
+- [中间件](#中间件)
 
-一个通过本库作为底层的react权限实现:  [**M78/auth**](<http://llixianjie.gitee.io/m78/docs/utils/auth>)
+<!-- /TOC -->
 
+<br>
 
+<br>
 
 ## 安装
 
 ```shell
 yarn add @lxjx/auth
 ```
+
+
+
+<br>
+
+
+
+## 介绍
+
+`auth`包含以下几个核心概念：
+
+- `dependency` , 也称为`deps`, 权限依赖，一个描述所有权限相关状态的对象。
+- `validator` , 权限验证器，接收``dependency` `进行权限验证，在未通过时返回无权限的描述和操作等。
+- `auth api` , 一个包含设置`deps`、获取`deps`、订阅`deps`变更、执行验证行为等操作的对象。
+- `middleware` , 中间件系统，用来更改初始`deps`，增强api
+
+
+
+<br>
+
+
+
+通常，为了更方便的使用，会基于此库开发上层验证库，如果你是react用户，可以直接使用 [**M78/auth**](<http://llixianjie.gitee.io/m78/docs/utils/auth>)，如果是其他框架或纯js使用，也可以参考它的api来实现自己的上层库。
 
 
 
@@ -61,10 +95,11 @@ const {
     /* 声明验证器 */
     validators: {
         login({ usr }) {
-            // 验证未通过时，返回提示信息，还可以同时返回对应的操作
+            // 验证未通过时，返回拒绝信息，还可以同时返回对应的操作
             if (!usr) {
                 return {
                     label: 'not log',
+                    // 除了label，其他都是非约定的，由自己的验证需求决定
                     desc: 'Please log in first',
                     actions: [
                         {
@@ -103,7 +138,7 @@ auth.auth(['login', 'vip'], rejects => {
 
 
 
-## 用法速览
+## API速览
 
 ```ts
 /* create() */
@@ -168,14 +203,14 @@ auth(
 
 中间件用于为原有api添加各种补丁功能，也可用于在配置实际生效前对其进行修改。
 
-中间件有两个执行周期
+中间件有两个执行周期：
 
 - 初始化阶段，用于修改传入的默认配置
 - 补丁阶段，用于为内置api添加各种增强性补丁
 
 
 
-签名：
+**签名：**
 
 ```ts
 interface Middleware {
@@ -206,27 +241,34 @@ export interface MiddlewareBonusPatch {
 
 <br/>
 
-以编写一个log中间件为例
+**一个log中间件的例子**
+
 ```ts
 import { Middleware } from '@lxjx/auth';
 
 const cacheMiddleware: Middleware = bonus => {
+    
+  /* ##### 初始化阶段 ##### */
   if (bonus.init) {
     const conf = bonus.config;
     console.log('init');
       
-    // 初始化时必须返回配置，即使没有对其进行修改
+    // 初始化时必须返回配置，即使没有对其进行修改， 返回值会作为新的初始deps使用
     return { ...conf, dependency: { ...conf.dependency, additionalDep: 'hello😄'  } }; 
   }
   
-  console.log('api created');
 
-  // 增强内部方法
+  /* ##### 补丁阶段 ##### */
+    
+  console.log('api created');
+    
+  // 在执行setDeps打印设置的新deps
   bonus.monkey('setDeps', next => patch => {
     console.log('setDeps', patch);
     next(patch);
   });
 
+  // 获取deps时输出获取行为
   bonus.monkey('getDeps', next => () => {
     console.log('getDeps');
     return next();

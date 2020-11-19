@@ -100,6 +100,7 @@ export interface MiddlewareBonusInit {
     ctx: AnyObject;
 }
 export interface MiddlewareBonusPatch {
+    /** 是否为初始化阶段 */
     init: false;
     /** 当前的auth api(可能已被其他中间件修改过) */
     apis: Auth<any, any>;
@@ -121,3 +122,4 @@ export interface MonkeyHelper {
 export interface Middleware {
     (bonus: MiddlewareBonusPatch | MiddlewareBonusInit): CreateAuthConfig<any, any> | void;
 }
+//# sourceMappingURL=types.d.ts.map

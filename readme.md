@@ -16,12 +16,35 @@
 </p>
 
 
+<br>
+
+
+
+😘 a implementation of the underlying react permissions through this library:  [**M78/auth**](<http://llixianjie.gitee.io/m78/docs/utils/auth>)
+
+
 
 <br>
 
 
 
-a implementation of the underlying react permissions through this library:  [**M78/auth**](<http://llixianjie.gitee.io/m78/docs/utils/auth>)
+
+<!-- TOC -->
+
+- [Install](#install)
+- [Introduction](#introduction)
+- [Usage](#usage)
+- [Overview](#overview)
+- [Middleware](#middleware)
+
+<!-- /TOC -->
+
+
+
+<br>
+
+<br>
+
 
 
 
@@ -35,7 +58,26 @@ yarn add @lxjx/auth
 
 <br>
 
+## Introduction
 
+`auth` contains the following core concepts：
+
+- `dependency`, also known as `deps`, permission dependency, an object describing all permission related states.
+- `validator`, permission validator, receives ``dependency` `for permission verification, and returns description and operation without permission if it fails.
+- `auth api`, an object that contains operations such as setting `deps`, obtaining `deps`, subscribing to `deps` changes, and performing verification actions.
+- `middleware`, middleware system, used to change the initial `deps` and enhance the api
+
+
+
+<br>
+
+
+
+Usually, for more convenient use, the upper-level authentication library will be developed based on this library. If you are a react user, you can directly use [**M78/auth**](<http://llixianjie.gitee.io/m78/docs /utils/auth>), if it is used by other frameworks or pure js, you can also refer to its api to implement your own upper library.
+
+
+
+<br>
 
 ## Usage
 
@@ -69,6 +111,7 @@ const {
             if (!usr) {
                 return {
                     label: 'not log',
+                    // except for label, everything else is non-contracted and determined by your own verification requirements
                     desc: 'Please log in first',
                     actions: [
                         {
@@ -178,7 +221,7 @@ Middleware has two execution cycles:
 
 
 
-signature：
+**signature：**
 
 ```ts
 interface Middleware {
@@ -209,28 +252,33 @@ export interface MiddlewareBonusPatch {
 
 <br/>
 
-a log middleware example
+**a log middleware example**
 
 ```ts
 import { Middleware } from '@lxjx/auth';
 
 const cacheMiddleware: Middleware = bonus => {
+    
+  /* ##### Initialization ##### */
   if (bonus.init) {
     const conf = bonus.config;
     console.log('init');
       
-    // The configuration must be returned during initialization, even if it has not been modified
+    // The configuration must be returned during initialization, even if it is not modified, the return value will be used as the new initial deps
     return { ...conf, dependency: { ...conf.dependency, additionalDep: 'hello😄'  } }; 
   }
   
+  /* ##### Patch ##### */
+    
   console.log('api created');
 
-  // Enhanced internal method
+  // The new deps set in the execution of setDeps printing
   bonus.monkey('setDeps', next => patch => {
     console.log('setDeps', patch);
     next(patch);
   });
 
+  // Output fetching behavior when fetching deps
   bonus.monkey('getDeps', next => () => {
     console.log('getDeps');
     return next();

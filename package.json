@@ -5,9 +5,9 @@
     "auth",
     "authority"
   ],
-  "version": "0.10.1",
+  "version": "1.11.5",
   "main": "index.js",
-  "module": "./index.js",
+  "module": "index.js",
   "types": "./",
   "repository": "https://github.com/Iixianjie/r2",
   "author": {
@@ -19,13 +19,13 @@
     "**"
   ],
   "scripts": {
-    "prebuild": "rimraf ./esm ./umd ./dist && npm run test && npm run lint",
+    "prebuild": "npm run lint && npm run test && rimraf ./esm ./umd ./dist",
     "build": "npm run build:esm && npm run build:umd",
     "postbuild": "copyfiles package.json ./esm/**/*.* -f dist && copyfiles ./umd/**/* dist",
-    "build:esm": "tsc",
-    "build:umd": "tsc -m UMD --outDir ./umd --declarationDir ./umd",
+    "build:esm": "tsc -p ./tsconfig.lib.json",
+    "build:umd": "tsc -p ./tsconfig.lib.json -m UMD --outDir ./umd --declarationDir ./umd",
     "dev": "parcel ./index.html",
-    "watch": "tsc -w",
+    "watch": "tsc -w -p ./tsconfig.lib.json",
     "lint:script": "eslint ./src --ext .js,.jsx,.ts,.tsx",
     "lint:prettier": "prettier --check ./src/**/*",
     "lint": "npm run lint:prettier && npm run lint:script",

@@ -16,3 +16,4 @@ export declare function subscribeImpl(share: Share<any, any>): Subscribe;
  * 实现中间件功能
  * */
 export declare function middlewareImpl(conf: CreateAuthConfig<any, any>): readonly [CreateAuthConfig<any, any>] | readonly [CreateAuthConfig<any, any>, (apis: Auth<any, any>) => void];
+//# sourceMappingURL=common.d.ts.map

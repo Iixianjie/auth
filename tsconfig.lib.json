@@ -1,0 +1,24 @@
+{
+  "files": [
+    "src/index.ts",
+    "node_modules/@types/jest/index.d.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ],
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@lxjx/hooks": ["src/index.ts"]
+    },
+    "target": "es5",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "importHelpers": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "jsx": "react",
+    "lib": ["dom", "esnext"],
+    "sourceMap": true
+  }
+}
